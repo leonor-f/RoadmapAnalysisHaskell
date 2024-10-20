@@ -47,7 +47,10 @@ pathDistance rm path = if all (\(c1, c2) -> areAdjacent rm c1 c2) (getPair path)
                        else Nothing
 
 rome :: RoadMap -> [City]
-rome = undefined
+rome rm = [c | c <- cities rm, length (adjacent rm c) == maxAdjacents]      -- for each unique city c in the road map, add it to the list if the nº of adjacent cities to c =
+                                                                            -- = max nº of adjacent cities, using the length of the adjacent function to that city c
+    where
+        maxAdjacents = maximum [length (adjacent rm c) | (c, _, _) <- rm]   -- maximum number of adjacent cities to a city in the road map (highest nº of roads connecting to a city)
 
 isStronglyConnected :: RoadMap -> Bool
 isStronglyConnected = undefined
