@@ -20,7 +20,9 @@ cities ((c1, c2, _):resto) = addCity c1 (addCity c2 (cities resto)) -- if the ro
         addCity city citiesList = if city `elem` citiesList then citiesList else city : citiesList -- helper function that adds a city to a list of cities if it is not already there
 
 areAdjacent :: RoadMap -> City -> City -> Bool
-areAdjacent = undefined
+areAdjacent rm c1 c2 = any (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y == c1)) rm -- if both cities are in the list of cities, check if there exists a tuple (x, y, _) in the
+                                                                                           -- road map such that (x == c1 && y == c2) or (x == c2 && y == c1), if it is, return True
+                                                                                           -- otherwise, return False
 
 distance :: RoadMap -> City -> City -> Maybe Distance
 distance = undefined
