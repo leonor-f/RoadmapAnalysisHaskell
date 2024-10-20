@@ -25,7 +25,11 @@ areAdjacent rm c1 c2 = any (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y 
                                                                                            -- otherwise, return False
 
 distance :: RoadMap -> City -> City -> Maybe Distance
-distance = undefined
+distance rm c1 c2
+    | c1 == c2 = Just 0         -- if the two cities are the same, distance is 0
+    | otherwise = case filter (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y == c1)) rm of
+        [] -> Nothing           -- if c1 and c2 aren't connected directly, return Nothing
+        (_, _, d):_ -> Just d   -- if c1 and c2 are a tuple in the road map (connected directly), return the distance
 
 adjacent :: RoadMap -> City -> [(City,Distance)]
 adjacent = undefined
