@@ -13,7 +13,11 @@ type Distance = Int
 type RoadMap = [(City,City,Distance)]
 
 cities :: RoadMap -> [City]
-cities = undefined -- modifiy this line to implement the solution, for each exercise not solved, leave the function definition like this
+cities [] = []
+cities ((c1, c2, _):resto) = addCity c1 (addCity c2 (cities resto)) -- if the road map is not empty, add the first city of the first tuple to the list of cities, then add the second city
+                                                                    -- of the first tuple to the list of cities, then call the function recursively with the rest of the road map
+    where
+        addCity city citiesList = if city `elem` citiesList then citiesList else city : citiesList -- helper function that adds a city to a list of cities if it is not already there
 
 areAdjacent :: RoadMap -> City -> City -> Bool
 areAdjacent = undefined
