@@ -32,7 +32,9 @@ distance rm c1 c2
         (_, _, d):_ -> Just d   -- if c1 and c2 are a tuple in the road map (connected directly), return the distance
 
 adjacent :: RoadMap -> City -> [(City,Distance)]
-adjacent = undefined
+adjacent rm c = [(c2, d) | (c1, c2, d) <- rm, c1 == c] ++ [(c1, d) | (c1, c2, d) <- rm, c2 == c] -- for each tuple (c1, c2, d) in the road map:
+                                                                                                 -- if c1 = c, add (c2, d) to the list
+                                                                                                 -- if c2 = c, add (c1, d) to the list
 
 pathDistance :: RoadMap -> Path -> Maybe Distance
 pathDistance = undefined
