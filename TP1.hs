@@ -37,7 +37,14 @@ adjacent rm c = [(c2, d) | (c1, c2, d) <- rm, c1 == c] ++ [(c1, d) | (c1, c2, d)
                                                                                                  -- if c2 = c, add (c1, d) to the list
 
 pathDistance :: RoadMap -> Path -> Maybe Distance
-pathDistance = undefined
+-- auxiliary function that creates pairs with the elements of a list 2 by 2
+getPair :: [a] -> [(a, a)]
+getPair (x:y:xs) = (x, y) : getPair xs  -- create pairs
+getPair _ = []                          -- if the list is empty or has only 1 element, return an empty list
+
+pathDistance rm path = if all (\(c1, c2) -> areAdjacent rm c1 c2) (getPair path)                     -- if all the consecutive pairs of cities are directly connected by roads
+                       then Just (sum [d | (c1, c2) <- getPair path, Just d <- [distance rm c1 c2]]) -- return the sum of all individual distances in the path, using the distance function
+                       else Nothing
 
 rome :: RoadMap -> [City]
 rome = undefined
