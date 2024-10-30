@@ -22,19 +22,19 @@ data AdjPointers = Place City [(AdjPointers, Distance)]
 
 cities :: RoadMap -> [City]
 cities [] = []
-cities ((c1, c2, _):resto) = addCity c1 (addCity c2 (cities resto)) -- if the road map is not empty, add the first city of the first tuple to the list of cities, then add the second city
-                                                                    -- of the first tuple to the list of cities, then call the function recursively with the rest of the road map
+cities ((c1, c2, _):resto) = addCity c1 (addCity c2 (cities resto))                                 -- if the road map is not empty, add the first city of the first tuple to the list of cities, then add the second city
+                                                                                                    -- of the first tuple to the list of cities, then call the function recursively with the rest of the road map
     where
-        addCity city citiesList = if city `elem` citiesList then citiesList else city : citiesList -- helper function that adds a city to a list of cities if it is not already there
+        addCity city citiesList = if city `elem` citiesList then citiesList else city : citiesList  -- helper function that adds a city to a list of cities if it is not already there
 
 
 
 -- 2. Return a boolean indicating whether two cities are linked directly
 
 areAdjacent :: RoadMap -> City -> City -> Bool
-areAdjacent rm c1 c2 = any (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y == c1)) rm -- if both cities are in the list of cities, check if there exists a tuple (x, y, _) in the
-                                                                                           -- road map such that (x == c1 && y == c2) or (x == c2 && y == c1), if it is, return True
-                                                                                           -- otherwise, return False
+areAdjacent rm c1 c2 = any (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y == c1)) rm          -- if both cities are in the list of cities, check if there exists a tuple (x, y, _) in the
+                                                                                                    -- road map such that (x == c1 && y == c2) or (x == c2 && y == c1), if it is, return True
+                                                                                                    -- otherwise, return False
 
 
 
@@ -42,19 +42,19 @@ areAdjacent rm c1 c2 = any (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y 
 
 distance :: RoadMap -> City -> City -> Maybe Distance
 distance rm c1 c2
-    | c1 == c2 = Just 0         -- if the two cities are the same, distance is 0
+    | c1 == c2 = Just 0                                                                             -- if the two cities are the same, distance is 0
     | otherwise = case filter (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y == c1)) rm of
-        [] -> Nothing           -- if c1 and c2 aren't connected directly, return Nothing
-        (_, _, d):_ -> Just d   -- if c1 and c2 are a tuple in the road map (connected directly), return the distance
+        [] -> Nothing                                                                               -- if c1 and c2 aren't connected directly, return Nothing
+        (_, _, d):_ -> Just d                                                                       -- if c1 and c2 are a tuple in the road map (connected directly), return the distance
 
 
 
 -- 4. Return a list of cities adjacent to a given city and the respective distances to them
 
 adjacent :: RoadMap -> City -> [(City,Distance)]
-adjacent rm c = [(c2, d) | (c1, c2, d) <- rm, c1 == c] ++ [(c1, d) | (c1, c2, d) <- rm, c2 == c] -- for each tuple (c1, c2, d) in the road map:
-                                                                                                 -- if c1 = c, add (c2, d) to the list
-                                                                                                 -- if c2 = c, add (c1, d) to the list
+adjacent rm c = [(c2, d) | (c1, c2, d) <- rm, c1 == c] ++ [(c1, d) | (c1, c2, d) <- rm, c2 == c]    -- for each tuple (c1, c2, d) in the road map:
+                                                                                                    -- if c1 = c, add (c2, d) to the list
+                                                                                                    -- if c2 = c, add (c1, d) to the list
 
 
 
@@ -63,37 +63,52 @@ adjacent rm c = [(c2, d) | (c1, c2, d) <- rm, c1 == c] ++ [(c1, d) | (c1, c2, d)
       Otherwise, return a Nothing.
 -}
 
--- auxiliary function that creates pairs with the elements of a list 2 by 2
-getPair :: [a] -> [(a, a)]
-getPair (x:y:xs) = (x, y) : getPair xs  -- create pairs
-getPair _ = []                          -- if the list is empty or has only 1 element, return an empty list
-
 pathDistance :: RoadMap -> Path -> Maybe Distance
 pathDistance rm path = if all (\(c1, c2) -> areAdjacent rm c1 c2) (getPair path)                     -- if all the consecutive pairs of cities are directly connected by roads
                        then Just (sum [d | (c1, c2) <- getPair path, Just d <- [distance rm c1 c2]]) -- return the sum of all individual distances in the path, using the distance function
                        else Nothing
 
 
+-- Auxiliary function that creates pairs with the elements of a list 2 by 2
+getPair :: [a] -> [(a, a)]
+getPair xs = zip xs (tail xs)
+
+
 
 -- 6. Return the names of the cities with the highest nº of roads connecting to them
 
 rome :: RoadMap -> [City]
-rome rm = [c | c <- cities rm, length (adjacent rm c) == maxAdjacents]      -- for each unique city c in the road map, add it to the list if the nº of adjacent cities to c =
-                                                                            -- = max nº of adjacent cities, using the length of the adjacent function to that city c
+rome rm = [c | c <- cities rm, length (adjacent rm c) == maxAdjacents]                              -- for each unique city c in the road map, add it to the list if the nº of adjacent cities to c =
+                                                                                                    -- = max nº of adjacent cities, using the length of the adjacent function to that city c
     where
-        maxAdjacents = maximum [length (adjacent rm c) | (c, _, _) <- rm]   -- maximum number of adjacent cities to a city in the road map (highest nº of roads connecting to a city)
+        maxAdjacents = maximum [length (adjacent rm c) | (c, _, _) <- rm]                           -- maximum number of adjacent cities to a city in the road map (highest nº of roads connecting to a city)
 
 
+
+-- 7. Check if the roadmap is fully connected
 
 isStronglyConnected :: RoadMap -> Bool
-isStronglyConnected = undefined
+isStronglyConnected rm = all (\c -> all (\c' -> not (null (findPaths rm c c'))) (cities rm)) (cities rm) -- for each city c in the road map, check if there exists a path from c to c' for all cities c' in the road map
+                                                                                                         -- if it is, return True, otherwise, return False
 
 
+-- Auxiliary function to find all paths
+findPaths :: RoadMap -> City -> City -> [Path]
+findPaths roadmap cityA cityB = findPaths' cityA cityB [] where
+    findPaths' current target visited
+        | current == target = [[current]]
+        | otherwise = [current:path | (next, _) <- adjacent roadmap current, next `notElem` visited, path <- findPaths' next target (current:visited)]
+
+
+
+-- 8. Return all shortest paths between two cities
 
 shortestPath :: RoadMap -> City -> City -> [Path]
 shortestPath = undefined
 
 
+
+-- 9. Solve the Traveling Salesman Problem using dynamic programming
 
 travelSales :: RoadMap -> Path
 travelSales = undefined
