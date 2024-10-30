@@ -104,7 +104,28 @@ findPaths roadmap cityA cityB = findPaths' cityA cityB [] where
 -- 8. Return all shortest paths between two cities
 
 shortestPath :: RoadMap -> City -> City -> [Path]
-shortestPath = undefined
+shortestPath rm c1 c2
+    | c1 == c2  = [[c1]]                                                                                -- if the two cities are the same, return a single-element path
+    | otherwise = filter ((== minDist) . pathDistance') paths                                           -- filter paths with the minimum distance
+    where
+        paths = bfsPaths rm c1 c2                                                                       -- find all possible paths from c1 to c2
+        minDist = minimum (map pathDistance' paths)                                                     -- calculate the minimum path distance
+        pathDistance' p = case pathDistance rm p of                                                     -- helper function to get distance from Maybe Distance
+            Just d  -> d
+            Nothing -> maxBound :: Int                                                                  -- use maxBound to ignore invalid paths
+
+
+-- Auxiliary function that performs BFS and accumulates paths between two cities
+bfsPaths :: RoadMap -> City -> City -> [Path]
+bfsPaths rm start goal = bfs [[start]] []
+  where
+    bfs [] paths = paths                                                                                -- if there are no more paths to explore, return all found paths
+    bfs (currentPath:remainingPaths) foundPaths
+        | last currentPath == goal = bfs remainingPaths (currentPath : foundPaths)                      -- if we reached the goal, add to results
+        | otherwise =
+            let nextCities = [next | (next, _) <- adjacent rm (last currentPath), next `notElem` currentPath] -- get next cities
+                newPaths = [currentPath ++ [next] | next <- nextCities]                                 -- extend paths to each next city
+            in bfs (remainingPaths ++ newPaths) foundPaths
 
 
 
