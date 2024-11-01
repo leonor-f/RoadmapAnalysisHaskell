@@ -20,6 +20,12 @@ data AdjPointers = Place City [(AdjPointers, Distance)]
 
 -- 1. Return all the cities in the graph
 
+-- | Returns all the cities in the roadmap.
+-- Arguments:
+--   rm: The roadmap to extract cities from.
+-- Returns:
+--   A list of cities in the roadmap.
+
 cities :: RoadMap -> [City]
 cities [] = []
 cities ((c1, c2, _):resto) = addCity c1 (addCity c2 (cities resto))                                 -- if the road map is not empty, add the first city of the first tuple to the list of cities, then add the second city
@@ -31,6 +37,14 @@ cities ((c1, c2, _):resto) = addCity c1 (addCity c2 (cities resto))             
 
 -- 2. Return a boolean indicating whether two cities are linked directly
 
+-- | Checks if two cities are directly connected in the roadmap.
+-- Arguments:
+--   rm: The roadmap to check.
+--   c1: The first city.
+--   c2: The second city.
+-- Returns:
+--   True if the cities are directly connected, False otherwise.
+
 areAdjacent :: RoadMap -> City -> City -> Bool
 areAdjacent rm c1 c2 = any (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y == c1)) rm          -- if both cities are in the list of cities, check if there exists a tuple (x, y, _) in the
                                                                                                     -- road map such that (x == c1 && y == c2) or (x == c2 && y == c1), if it is, return True
@@ -39,6 +53,14 @@ areAdjacent rm c1 c2 = any (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y 
 
 
 -- 3. Return a Just value with the distance between two cities connected directly, given two city names, and Nothing otherwise
+
+-- | Returns the distance between two cities if they are directly connected.
+-- Arguments:
+--   rm: The roadmap to check.
+--   c1: The first city.
+--   c2: The second city.
+-- Returns:
+--   Just distance if the cities are directly connected, Nothing otherwise.
 
 distance :: RoadMap -> City -> City -> Maybe Distance
 distance rm c1 c2
@@ -50,6 +72,13 @@ distance rm c1 c2
 
 
 -- 4. Return a list of cities adjacent to a given city and the respective distances to them
+
+-- | Returns the list of cities adjacent to a given city.
+-- Arguments:
+--   rm: The roadmap to check.
+--   c: The city to find adjacent cities for.
+-- Returns:
+--   A list of cities adjacent to the given city.
 
 adjacent :: RoadMap -> City -> [(City,Distance)]
 adjacent rm c = [(c2, d) | (c1, c2, d) <- rm, c1 == c] ++ [(c1, d) | (c1, c2, d) <- rm, c2 == c]    -- for each tuple (c1, c2, d) in the road map:
@@ -63,19 +92,37 @@ adjacent rm c = [(c2, d) | (c1, c2, d) <- rm, c1 == c] ++ [(c1, d) | (c1, c2, d)
       Otherwise, return a Nothing.
 -}
 
+-- | Returns the sum of all individual distances in a path between two cities.
+-- Arguments:
+--   rm: The roadmap to check.
+--   path: The path to calculate the distance for.
+-- Returns:
+--   Just the sum of distances if all consecutive pairs of cities are directly connected, Nothing otherwise.
+
 pathDistance :: RoadMap -> Path -> Maybe Distance
 pathDistance rm path = if all (\(c1, c2) -> areAdjacent rm c1 c2) (getPair path)                     -- if all the consecutive pairs of cities are directly connected by roads
                        then Just (sum [d | (c1, c2) <- getPair path, Just d <- [distance rm c1 c2]]) -- return the sum of all individual distances in the path, using the distance function
                        else Nothing
 
 
--- Auxiliary function that creates pairs with the elements of a list 2 by 2
+-- | Auxiliary function that creates pairs with the elements of a list 2 by 2.
+-- Arguments:
+--   xs: The list to create pairs from.
+-- Returns:
+--   A list of pairs created from the input list.
+
 getPair :: [a] -> [(a, a)]
 getPair xs = zip xs (tail xs)
 
 
 
 -- 6. Return the names of the cities with the highest nº of roads connecting to them
+
+-- | Returns the names of the cities with the highest number of roads connecting to them.
+-- Arguments:
+--   rm: The roadmap to check.
+-- Returns:
+--   A list of cities with the highest number of roads connecting to them.
 
 rome :: RoadMap -> [City]
 rome rm = [c | c <- cities rm, length (adjacent rm c) == maxAdjacents]                              -- for each unique city c in the road map, add it to the list if the nº of adjacent cities to c =
@@ -87,14 +134,28 @@ rome rm = [c | c <- cities rm, length (adjacent rm c) == maxAdjacents]          
 
 -- 7. Check if the roadmap is fully connected
 
+-- | Checks if the roadmap is strongly connected.
+-- A roadmap is strongly connected if there is a path between any two cities.
+-- Arguments:
+--   rm: The roadmap to check.
+-- Returns:
+--   True if the roadmap is strongly connected, False otherwise.
+
 isStronglyConnected :: RoadMap -> Bool
 isStronglyConnected rm = all (\c -> all (\c' -> not (null (findPaths rm c c'))) (cities rm)) (cities rm) -- for each city c in the road map, check if there exists a path from c to c' for all cities c' in the road map
                                                                                                          -- if it is, return True, otherwise, return False
 
 
--- Auxiliary function to find all paths
+-- | Auxiliary function to find all paths in the roadmap.
+-- Arguments:
+--   roadmap: The roadmap to search.
+--   c1: The starting city.
+--   c2: The destination city.
+-- Returns:
+--   A list of paths, where each path is a list of cities.
+
 findPaths :: RoadMap -> City -> City -> [Path]
-findPaths roadmap cityA cityB = findPaths' cityA cityB [] where
+findPaths roadmap c1 c2 = findPaths' c1 c2 [] where
     findPaths' current target visited
         | current == target = [[current]]
         | otherwise = [current:path | (next, _) <- adjacent roadmap current, next `notElem` visited, path <- findPaths' next target (current:visited)]
@@ -102,6 +163,14 @@ findPaths roadmap cityA cityB = findPaths' cityA cityB [] where
 
 
 -- 8. Return all shortest paths between two cities
+
+-- | Finds all shortest paths between two cities in a roadmap.
+-- Arguments:
+--   rm: The roadmap to search.
+--   c1: The starting city.
+--   c2: The destination city.
+-- Returns:
+--   A list of shortest paths, where each path is a list of cities.
 
 shortestPath :: RoadMap -> City -> City -> [Path]
 shortestPath rm c1 c2
@@ -115,7 +184,14 @@ shortestPath rm c1 c2
             Nothing -> maxBound :: Int                                                                  -- use maxBound to ignore invalid paths
 
 
--- Auxiliary function that performs BFS and accumulates paths between two cities
+-- | Auxiliary function that finds all paths between two cities in a roadmap using breadth-first search.
+-- Arguments:
+--   rm: The roadmap to search.
+--   start: The starting city.
+--   goal: The destination city.
+-- Returns:
+--   A list of paths, where each path is a list of cities.
+
 bfsPaths :: RoadMap -> City -> City -> [Path]
 bfsPaths rm start goal = bfs [[start]] []
   where
@@ -126,6 +202,7 @@ bfsPaths rm start goal = bfs [[start]] []
             let nextCities = [next | (next, _) <- adjacent rm (last currentPath), next `notElem` currentPath] -- get next cities
                 newPaths = [currentPath ++ [next] | next <- nextCities]                                 -- extend paths to each next city
             in bfs (remainingPaths ++ newPaths) foundPaths
+
 
 
 
