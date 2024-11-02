@@ -218,7 +218,7 @@ bfsPaths rm start goal = bfs [[start]] []
 
 
 -- 9. Solve the Traveling Salesman Problem using dynamic programming
--- Goal: Finds the shortest path that visits all cities in the roadmap exactly once and returns to the start.
+-- | Finds the shortest path that visits all cities in the roadmap exactly once and returns to the start.
 -- Arguments:
 --   rm: The roadmap to solve the TSP on.
 -- Returns:
