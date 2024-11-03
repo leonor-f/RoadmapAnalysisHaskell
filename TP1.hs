@@ -29,8 +29,8 @@ data AdjPointers = Place City [(AdjPointers, Distance)]
 
 cities :: RoadMap -> [City]
 cities [] = []
-cities ((c1, c2, _):resto) = addCity c1 (addCity c2 (cities resto))                                 -- if the road map is not empty, add the first city of the first tuple to the list of cities, then add the second city
-                                                                                                    -- of the first tuple to the list of cities, then call the function recursively with the rest of the road map
+cities ((c1, c2, _):resto) = addCity c1 (addCity c2 (cities resto))                                 -- if the roadmap is not empty, add the first city of the first tuple to the list of cities, then add the second city
+                                                                                                    -- of the first tuple to the list of cities, then call the function recursively with the rest of the roadmap
     where
         addCity city citiesList = if city `elem` citiesList then citiesList else city : citiesList  -- helper function that adds a city to a list of cities if it is not already there
 
@@ -49,7 +49,7 @@ cities ((c1, c2, _):resto) = addCity c1 (addCity c2 (cities resto))             
 
 areAdjacent :: RoadMap -> City -> City -> Bool
 areAdjacent rm c1 c2 = any (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y == c1)) rm          -- if both cities are in the list of cities, check if there exists a tuple (x, y, _) in the
-                                                                                                    -- road map such that (x == c1 && y == c2) or (x == c2 && y == c1), if it is, return True
+                                                                                                    -- roadmap such that (x == c1 && y == c2) or (x == c2 && y == c1), if it is, return True
                                                                                                     -- otherwise, return False
 
 
@@ -70,7 +70,7 @@ distance rm c1 c2
     | c1 == c2 = Just 0                                                                             -- if the two cities are the same, distance is 0
     | otherwise = case filter (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y == c1)) rm of
         [] -> Nothing                                                                               -- if c1 and c2 aren't connected directly, return Nothing
-        (_, _, d):_ -> Just d                                                                       -- if c1 and c2 are a tuple in the road map (connected directly), return the distance
+        (_, _, d):_ -> Just d                                                                       -- if c1 and c2 are a tuple in the roadmap (connected directly), return the distance
 
 
 
@@ -85,7 +85,7 @@ distance rm c1 c2
 -- Time Complexity: O(m), where m is the number of roads in the roadmap as it checks both directions for adjacency.
 
 adjacent :: RoadMap -> City -> [(City,Distance)]
-adjacent rm c = [(c2, d) | (c1, c2, d) <- rm, c1 == c] ++ [(c1, d) | (c1, c2, d) <- rm, c2 == c]    -- for each tuple (c1, c2, d) in the road map:
+adjacent rm c = [(c2, d) | (c1, c2, d) <- rm, c1 == c] ++ [(c1, d) | (c1, c2, d) <- rm, c2 == c]    -- for each tuple (c1, c2, d) in the roadmap:
                                                                                                     -- if c1 = c, add (c2, d) to the list
                                                                                                     -- if c2 = c, add (c1, d) to the list
 
@@ -132,10 +132,10 @@ getPair xs = zip xs (tail xs)
 -- Time Complexity: O(n * m), where n is the number of cities and m is the number of roads as it checks the adjacency for each city.
 
 rome :: RoadMap -> [City]
-rome rm = [c | c <- cities rm, length (adjacent rm c) == maxAdjacents]                              -- for each unique city c in the road map, add it to the list if the nº of adjacent cities to c =
+rome rm = [c | c <- cities rm, length (adjacent rm c) == maxAdjacents]                              -- for each unique city c in the roadmap, add it to the list if the nº of adjacent cities to c =
                                                                                                     -- = max nº of adjacent cities, using the length of the adjacent function to that city c
     where
-        maxAdjacents = maximum [length (adjacent rm c) | (c, _, _) <- rm]                           -- maximum number of adjacent cities to a city in the road map (highest nº of roads connecting to a city)
+        maxAdjacents = maximum [length (adjacent rm c) | (c, _, _) <- rm]                           -- maximum number of adjacent cities to a city in the roadmap (highest nº of roads connecting to a city)
 
 
 
@@ -147,27 +147,11 @@ rome rm = [c | c <- cities rm, length (adjacent rm c) == maxAdjacents]          
 --   rm: The roadmap to check.
 -- Returns:
 --   True if the roadmap is strongly connected, False otherwise.
--- Time Complexity: O(n^2 * (m + n)), where n is the number of cities and m is the number of roads, due to the nested checks for paths between each pair of cities.
+-- Time Complexity: O(m + n), where n is the number of cities and m is the number of roads, due to the BFS search.
 
 isStronglyConnected :: RoadMap -> Bool
-isStronglyConnected rm = all (\c -> all (\c' -> not (null (findPaths rm c c'))) (cities rm)) (cities rm) -- for each city c in the road map, check if there exists a path from c to c' for all cities c' in the road map
-                                                                                                         -- if it is, return True, otherwise, return False
-
-
--- | Auxiliary function to find all paths in the roadmap.
--- Arguments:
---   roadmap: The roadmap to search.
---   c1: The starting city.
---   c2: The destination city.
--- Returns:
---   A list of paths, where each path is a list of cities.
--- Time Complexity: O(2^n), where n is the number of cities, due to the exponential growth of possible paths generated by the recursive calls.
-
-findPaths :: RoadMap -> City -> City -> [Path]
-findPaths roadmap c1 c2 = findPaths' c1 c2 [] where
-    findPaths' current target visited
-        | current == target = [[current]]
-        | otherwise = [current:path | (next, _) <- adjacent roadmap current, next `notElem` visited, path <- findPaths' next target (current:visited)]
+isStronglyConnected rm = all (\c -> all (\c' -> not (null (bfsPaths rm c c'))) (cities rm)) (cities rm) -- for each city c in the roadmap, check if there exists a path from c to c' for all cities c' in the roadmap
+                                                                                                        -- if it is, return True, otherwise, return False
 
 
 
