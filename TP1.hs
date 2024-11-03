@@ -188,25 +188,28 @@ shortestPath rm c1 c2
 -- Arguments:
 --   rm: The roadmap to search.
 --   start: The starting city.
---   goal: The destination city.
+--   dest: The destination city.
 -- Returns:
---   A list of paths, where each path is a list of cities.
+--   A list of paths from the start city to the end city.
 
 bfsPaths :: RoadMap -> City -> City -> [Path]
-bfsPaths rm start goal = bfs [[start]] []
-  where
-    bfs [] paths = paths                                                                                -- if there are no more paths to explore, return all found paths
-    bfs (currentPath:remainingPaths) foundPaths
-        | last currentPath == goal = bfs remainingPaths (currentPath : foundPaths)                      -- if we reached the goal, add to results
-        | otherwise =
-            let nextCities = [next | (next, _) <- adjacent rm (last currentPath), next `notElem` currentPath] -- get next cities
-                newPaths = [currentPath ++ [next] | next <- nextCities]                                 -- extend paths to each next city
-            in bfs (remainingPaths ++ newPaths) foundPaths
-
+bfsPaths rm start dest = bfs [[start]] [] where
+    bfs [] _ = []                                                                                       -- if there are no more paths to explore, return an empty list
+    bfs (currentPath : remainingPaths) visited
+        | last currentPath == dest = currentPath : bfs remainingPaths visited                           -- if we reach the destination, add it to visited and continue exploring other paths
+        | otherwise = bfs (remainingPaths ++ newPaths) (last currentPath : visited)                     -- otherwise, add the last city of the current path to visited and continue exploring from there
+        where
+            newPaths = [currentPath ++ [next] | (next, _) <- adjacent rm (last currentPath), next `notElem` visited] -- extend paths to each next city (adjacent cities)
 
 
 
 -- 9. Solve the Traveling Salesman Problem using dynamic programming
+
+-- | Solves the Traveling Salesman Problem using dynamic programming.
+-- Arguments:
+--   roadmap: The roadmap to solve the problem.
+-- Returns:
+--   A path that visits all cities in the roadmap.
 
 travelSales :: RoadMap -> Path
 travelSales = undefined
