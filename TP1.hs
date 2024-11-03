@@ -9,6 +9,7 @@ import qualified Data.Bits
 type City = String
 type Path = [City]
 type Distance = Int
+type Bit = Integer
 
 type RoadMap = [(City,City,Distance)]
 
@@ -20,7 +21,7 @@ data AdjPointers = Place City [(AdjPointers, Distance)]
 
 -- 1. Return all the cities in the graph
 
--- | Returns all the cities in the roadmap.
+-- | Returns all the unique cities in the roadmap.
 -- Arguments:
 --   rm: The roadmap to extract cities from.
 -- Returns:
@@ -49,8 +50,8 @@ cities ((c1, c2, _):resto) = addCity c1 (addCity c2 (cities resto))             
 
 areAdjacent :: RoadMap -> City -> City -> Bool
 areAdjacent rm c1 c2 = any (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y == c1)) rm          -- if both cities are in the list of cities, check if there exists a tuple (x, y, _) in the
-                                                                                                    -- roadmap such that (x == c1 && y == c2) or (x == c2 && y == c1), if it is, return True
-                                                                                                    -- otherwise, return False
+                                                                                                    -- roadmap such that (x == c1 && y == c2) or (x == c2 && y == c1)
+                                                                                                    -- if it is, return True, otherwise, return False
 
 
 
@@ -63,7 +64,7 @@ areAdjacent rm c1 c2 = any (\(x, y, _) -> (x == c1 && y == c2) || (x == c2 && y 
 --   c2: The second city.
 -- Returns:
 --   Just distance if the cities are directly connected, Nothing otherwise.
--- Time Complexity: O(m), where m is the number of roads in the roadmap because it potentially filters through all roads to find a connection.
+-- Time Complexity: O(m), where m is the number of roads in the roadmap because of filtering through all roads to find a connection.
 
 distance :: RoadMap -> City -> City -> Maybe Distance
 distance rm c1 c2
@@ -199,25 +200,109 @@ bfsPaths rm start dest = bfs [[start]] [] where
 
 
 -- 9. Solve the Traveling Salesman Problem using dynamic programming
-
 -- | Finds the shortest path that visits all cities in the roadmap exactly once and returns to the start.
 -- Arguments:
---   rm: The roadmap to solve the TSP on.
+--   rm: The roadmap to find a TSP solution for.
 -- Returns:
 --   A path representing one of the optimal routes and an empty list if that path don't exist.
--- Time Complexity: O((n−1)! * m), where n is the number of cities and m is the number of roads in the roadmap
+-- Time Complexity: O(2^n * n^2), due to dynamic programming approach for TSP.
 
 travelSales :: RoadMap -> Path
 travelSales rm
-    | null allCities = []                                                                                 -- If there are no cities, return an empty path
-    | null tspPaths   = []                                                                                -- If no valid TSP path exists, return an empty path
-    | otherwise       = snd $ minimum tspPaths                                                            -- Return the shortest valid TSP path
-  where
-    allCities = cities rm
-    startCity = head allCities
-    possiblePaths = map (startCity :) $ Data.List.permutations (tail allCities)    
-    tspPaths = [(totalDistance, path ++ [startCity]) | path <- possiblePaths,                             -- Add the startCity as the last vertex to be visited
-                  let totalDistance = pathDistance rm (path ++ [startCity]), totalDistance /= Nothing]    -- Calculate distance of one of the possible paths
+    | not (isStronglyConnected rm) = []                                                                 -- If the roadmap is not fully connected, return an empty path
+    | otherwise = 
+        let cityList = cities rm                                                                        -- List of all cities in the roadmap
+            adjMatrix = convertToAdjMatrix rm                                                           -- Convert roadmap to adjacency matrix for easier distance lookup
+            cityCount = length cityList                                                                 -- Total number of cities
+            targetMask = createAllVisitedMask cityCount                                                 -- Mask with all cities marked as visited
+            initialMask = Data.Bits.bit 0                                                               -- Start mask with the first city visited
+            startCityIndex = 0                                                                          -- Index of the start city (head of cityList)
+        in case findTSPPath adjMatrix initialMask startCityIndex startCityIndex targetMask [] of
+               Just (_, resultPath) -> map (cityList !!) (resultPath ++ [startCityIndex])               -- Convert indices to city names and return path
+               Nothing -> []   
+
+
+-- | Converts a roadmap to an adjacency matrix representation.
+-- Arguments:
+--   rm: The roadmap to convert.
+-- Returns:
+--   An adjacency matrix with distances between each pair of cities.
+-- Time Complexity: O(n^2), where n is the number of cities.
+
+convertToAdjMatrix :: RoadMap -> AdjMatrix
+convertToAdjMatrix rm =
+    let cityList = cities rm
+        cityCount = length cityList
+        bounds = ((0, 0), (cityCount - 1, cityCount - 1))
+        getDistance i j = distance rm (cityList !! i) (cityList !! j)
+    in Data.Array.array bounds [((i, j), getDistance i j) | i <- [0..cityCount-1], j <- [0..cityCount-1]]
+
+
+-- | Creates a mask where all cities are marked as visited.
+-- Arguments:
+--   n: The total number of cities.
+-- Returns:
+--   A bitmask representing that all cities are visited.
+-- Time Complexity: O(1).
+
+createAllVisitedMask :: Int -> Bit
+createAllVisitedMask n = (Data.Bits.shiftL 1 n) - 1
+
+
+-- | Checks if a city is marked as visited in the bitmask.
+-- Arguments:
+--   mask: The current bitmask.
+--   cityIndex: The index of the city to check.
+-- Returns:
+--   True if the city is visited, False otherwise.
+-- Time Complexity: O(1).
+
+hasVisitedCity :: Bit -> Int -> Bool
+hasVisitedCity mask cityIndex = (mask Data.Bits..&. Data.Bits.shiftL 1 cityIndex) /= 0
+
+
+-- | Marks a city as visited in the bitmask.
+-- Arguments:
+--   mask: The current bitmask.
+--   cityIndex: The index of the city to mark as visited.
+-- Returns:
+--   An updated bitmask with the city marked as visited.
+-- Time Complexity: O(1).
+
+markCityVisited :: Bit -> Int -> Bit
+markCityVisited mask cityIndex = mask Data.Bits..|. Data.Bits.shiftL 1 cityIndex
+
+
+-- | Auxiliary function to find the minimum-cost TSP path starting and ending at a given city.
+-- Arguments:
+--   adjMatrix: The adjacency matrix of the roadmap.
+--   visitedMask: The current bitmask representing visited cities.
+--   currentCity: The index of the current city.
+--   startCity: The index of the city to start and end at.
+--   targetMask: A bitmask representing all cities visited.
+--   currentPath: The path traversed so far.
+-- Returns:
+--   A Maybe tuple containing the minimum distance and corresponding path, if valid.
+-- Time Complexity: O(2^n * n^2), where n is the number of cities.
+
+findTSPPath :: AdjMatrix -> Bit -> Int -> Int -> Bit -> [Int] -> Maybe (Distance, [Int])
+findTSPPath adjMatrix visitedMask currentCity startCity targetMask currentPath
+    | visitedMask == targetMask =                                                                       -- If all cities are visited
+        case adjMatrix Data.Array.! (currentCity, startCity) of
+            Just returnDist -> Just (returnDist, reverse (currentCity : currentPath))                   -- Return completed path if there's a direct route back
+            Nothing -> Nothing                                                                          -- Return Nothing if no route back to start city exists
+    | otherwise =
+        let ((_, _), (maxIdx, _)) = Data.Array.bounds adjMatrix
+            nextSteps = [ (dist + newDist, newPath)
+                        | nextCity <- [0..maxIdx],                                                      -- Iterate over all possible next cities
+                          not (hasVisitedCity visitedMask nextCity),                                    -- Check that the next city hasn't been visited
+                          let dist = maybe maxBound id (adjMatrix Data.Array.! (currentCity, nextCity)), -- Get distance or set to max if no direct path
+                          dist < maxBound,                                                              -- Ensure there's a valid direct path
+                          Just (newDist, newPath) <- [findTSPPath adjMatrix (markCityVisited visitedMask nextCity) nextCity startCity targetMask (currentCity : currentPath)]
+                        ]
+        in if null nextSteps 
+           then Nothing                                                                                 -- If no valid path exists, return Nothing
+           else Just (minimum nextSteps)    
 
 
 
@@ -236,5 +321,4 @@ gTest2 = [("0","1",10),("0","2",15),("0","3",20),("1","2",35),("1","3",25),("2",
 
 gTest3 :: RoadMap -- unconnected graph
 gTest3 = [("0","1",4),("2","3",2)]
-
 
