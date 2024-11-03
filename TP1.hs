@@ -205,7 +205,7 @@ bfsPaths rm start dest = bfs [[start]] [] where
 --   rm: The roadmap to solve the TSP on.
 -- Returns:
 --   A path representing one of the optimal routes and an empty list if that path don't exist.
--- Time Complexity: O((n−1)!* m), where n is the number of cities and m is the number of edges in the roadmap
+-- Time Complexity: O((n−1)! * m), where n is the number of cities and m is the number of roads in the roadmap
 
 travelSales :: RoadMap -> Path
 travelSales rm
