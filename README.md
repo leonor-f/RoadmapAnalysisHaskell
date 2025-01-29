@@ -1,7 +1,7 @@
 # Roadmap Analysis in Haskell
 Analysis of a roadmap using Haskell, including shortest path calculation using BFS and Traveling Salesman Problem (TSP) solution with dynamic programming.
 
-#### Grade: 19
+#### Grade: 19/20
 
 ## Project description
 This project involved the development of several functions to allow manipulation, navigation and analysis of a roadmap. The roadmap was represented in a graph, where vertices are cities and edges are roads defined by tuples containing the city names and the distance between them. The graph is undirected, allowing traversal in both directions.
